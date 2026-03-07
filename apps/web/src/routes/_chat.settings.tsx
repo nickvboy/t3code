@@ -6,8 +6,10 @@ import { getModelOptions, normalizeModelSlug } from "@t3tools/shared/model";
 import { ZapIcon } from "lucide-react";
 
 import {
+  APP_CODEX_REASONING_EFFORT_OPTIONS,
   APP_SERVICE_TIER_OPTIONS,
   MAX_CUSTOM_MODEL_LENGTH,
+  resolveAppCodexReasoningEffort,
   shouldShowFastTierIcon,
   useAppSettings,
 } from "../appSettings";
@@ -104,6 +106,7 @@ function SettingsRouteView() {
   const codexBinaryPath = settings.codexBinaryPath;
   const codexHomePath = settings.codexHomePath;
   const codexServiceTier = settings.codexServiceTier;
+  const codexReasoningEffort = resolveAppCodexReasoningEffort(settings.codexReasoningEffort);
   const keybindingsConfigPath = serverConfigQuery.data?.keybindingsConfigPath ?? null;
 
   const openKeybindingsFile = useCallback(() => {
@@ -244,9 +247,10 @@ function SettingsRouteView() {
 
             <section className="rounded-2xl border border-border bg-card p-5">
               <div className="mb-4">
-                <h2 className="text-sm font-medium text-foreground">Codex App Server</h2>
+                <h2 className="text-sm font-medium text-foreground">Codex Configuration</h2>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  These overrides apply to new sessions and let you use a non-default Codex install.
+                  These defaults apply to new sessions and let you control which Codex install and
+                  reasoning behavior the app uses.
                 </p>
               </div>
 
@@ -279,6 +283,42 @@ function SettingsRouteView() {
                   </span>
                 </label>
 
+                <label className="block space-y-1">
+                  <span className="text-xs font-medium text-foreground">
+                    Default reasoning level
+                  </span>
+                  <Select
+                    items={APP_CODEX_REASONING_EFFORT_OPTIONS.map((effort) => ({
+                      label:
+                        effort === "xhigh"
+                          ? "Extra High"
+                          : effort.charAt(0).toUpperCase() + effort.slice(1),
+                      value: effort,
+                    }))}
+                    value={codexReasoningEffort}
+                    onValueChange={(value) => {
+                      if (!value) return;
+                      updateSettings({ codexReasoningEffort: value });
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectPopup alignItemWithTrigger={false}>
+                      {APP_CODEX_REASONING_EFFORT_OPTIONS.map((effort) => (
+                        <SelectItem key={effort} value={effort}>
+                          {effort === "xhigh"
+                            ? "Extra High"
+                            : effort.charAt(0).toUpperCase() + effort.slice(1)}
+                        </SelectItem>
+                      ))}
+                    </SelectPopup>
+                  </Select>
+                  <span className="text-xs text-muted-foreground">
+                    Used for new Codex chats unless you override the level from the composer.
+                  </span>
+                </label>
+
                 <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
                   <p>
                     Binary source:{" "}
@@ -291,10 +331,11 @@ function SettingsRouteView() {
                       updateSettings({
                         codexBinaryPath: defaults.codexBinaryPath,
                         codexHomePath: defaults.codexHomePath,
+                        codexReasoningEffort: defaults.codexReasoningEffort,
                       })
                     }
                   >
-                    Reset codex overrides
+                    Reset Codex settings
                   </Button>
                 </div>
               </div>

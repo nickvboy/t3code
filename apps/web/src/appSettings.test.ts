@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  APP_CODEX_REASONING_EFFORT_OPTIONS,
   getAppModelOptions,
   getSlashModelOptions,
   normalizeCustomModelSlugs,
+  resolveAppCodexReasoningEffort,
   resolveAppServiceTier,
   shouldShowFastTierIcon,
   resolveAppModelSelection,
@@ -93,6 +95,19 @@ describe("resolveAppServiceTier", () => {
   it("preserves explicit service tier overrides", () => {
     expect(resolveAppServiceTier("fast")).toBe("fast");
     expect(resolveAppServiceTier("flex")).toBe("flex");
+  });
+});
+
+describe("resolveAppCodexReasoningEffort", () => {
+  it("falls back to the app default when unset", () => {
+    expect(resolveAppCodexReasoningEffort(null)).toBe("medium");
+    expect(resolveAppCodexReasoningEffort(undefined)).toBe("medium");
+  });
+
+  it("preserves explicit reasoning effort selections", () => {
+    for (const effort of APP_CODEX_REASONING_EFFORT_OPTIONS) {
+      expect(resolveAppCodexReasoningEffort(effort)).toBe(effort);
+    }
   });
 });
 

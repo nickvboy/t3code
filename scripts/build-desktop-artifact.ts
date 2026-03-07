@@ -450,6 +450,9 @@ const createBuildConfig = Effect.fn("createBuildConfig")(function* (
     appId: "com.t3tools.t3code",
     productName,
     artifactName: "T3-Code-${version}-${arch}.${ext}",
+    npmRebuild: false,
+    nodeGypRebuild: false,
+    buildDependenciesFromSource: false,
     directories: {
       buildResources: "apps/desktop/resources",
     },

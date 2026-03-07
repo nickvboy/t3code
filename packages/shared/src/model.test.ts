@@ -64,6 +64,6 @@ describe("getReasoningEffortOptions", () => {
 
 describe("getDefaultReasoningEffort", () => {
   it("returns provider-scoped defaults", () => {
-    expect(getDefaultReasoningEffort("codex")).toBe("high");
+    expect(getDefaultReasoningEffort("codex")).toBe("medium");
   });
 });

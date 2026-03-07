@@ -201,6 +201,7 @@ import { readNativeApi } from "~/nativeApi";
 import {
   getAppModelOptions,
   resolveAppModelSelection,
+  resolveAppCodexReasoningEffort,
   resolveAppServiceTier,
   shouldShowFastTierIcon,
   type AppServiceTier,
@@ -817,7 +818,11 @@ export default function ChatView({ threadId }: ChatViewProps) {
   }, [baseThreadModel, composerDraft.model, customModelsForSelectedProvider, selectedProvider]);
   const reasoningOptions = getReasoningEffortOptions(selectedProvider);
   const supportsReasoningEffort = reasoningOptions.length > 0;
-  const selectedEffort = composerDraft.effort ?? getDefaultReasoningEffort(selectedProvider);
+  const selectedEffort =
+    composerDraft.effort ??
+    (selectedProvider === "codex"
+      ? resolveAppCodexReasoningEffort(settings.codexReasoningEffort)
+      : getDefaultReasoningEffort(selectedProvider));
   const selectedCodexFastModeEnabled =
     selectedProvider === "codex" ? composerDraft.codexFastMode : false;
   const selectedModelOptionsForDispatch = useMemo(() => {

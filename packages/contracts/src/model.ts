@@ -53,5 +53,5 @@ export const REASONING_EFFORT_OPTIONS_BY_PROVIDER = {
 } as const satisfies Record<ProviderKind, readonly CodexReasoningEffort[]>;
 
 export const DEFAULT_REASONING_EFFORT_BY_PROVIDER = {
-  codex: "high",
+  codex: "medium",
 } as const satisfies Record<ProviderKind, CodexReasoningEffort | null>;

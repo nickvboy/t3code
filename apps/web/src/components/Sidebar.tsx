@@ -1,5 +1,6 @@
 import {
   ChevronRightIcon,
+  SettingsIcon,
   FolderIcon,
   GitPullRequestIcon,
   RocketIcon,
@@ -1298,6 +1299,16 @@ export default function Sidebar() {
 
       <SidebarSeparator />
       <SidebarFooter className="gap-0 p-3">
+        <button
+          type="button"
+          className="mb-2 flex w-full items-center justify-center gap-1 rounded-md border border-border py-2 text-xs text-muted-foreground/70 transition-colors duration-150 hover:bg-secondary hover:text-foreground"
+          onClick={() => {
+            void navigate({ to: "/settings" });
+          }}
+        >
+          <SettingsIcon className="size-3.5" />
+          Settings
+        </button>
         {addingProject ? (
           <>
             <p className="mb-2 text-[10px] font-medium uppercase tracking-wider text-muted-foreground/70">
