@@ -16,7 +16,8 @@ function ChatIndexRouteView() {
       )}
 
       {isElectron && (
-        <div className="drag-region flex h-[52px] shrink-0 items-center border-b border-border px-5">
+        <div className="drag-region flex h-[52px] shrink-0 items-center gap-2 border-b border-border px-5">
+          <SidebarTrigger className="shrink-0" />
           <span className="text-xs text-muted-foreground/50">No active thread</span>
         </div>
       )}

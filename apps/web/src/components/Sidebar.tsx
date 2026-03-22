@@ -1176,30 +1176,56 @@ export default function Sidebar() {
         <>
           <SidebarHeader className="drag-region h-[52px] flex-row items-center gap-2 px-4 py-0 pl-[90px]">
             {wordmark}
-            {showDesktopUpdateButton && (
+            <div className="ml-auto flex items-center gap-1">
               <Tooltip>
                 <TooltipTrigger
                   render={
-                    <button
-                      type="button"
-                      aria-label={desktopUpdateTooltip}
-                      aria-disabled={desktopUpdateButtonDisabled || undefined}
-                      disabled={desktopUpdateButtonDisabled}
-                      className={`inline-flex size-7 ml-auto mt-1.5 items-center justify-center rounded-md text-muted-foreground transition-colors ${desktopUpdateButtonInteractivityClasses} ${desktopUpdateButtonClasses}`}
-                      onClick={handleDesktopUpdateButtonClick}
-                    >
-                      <RocketIcon className="size-3.5" />
-                    </button>
+                    <SidebarTrigger
+                      className="hidden shrink-0 text-muted-foreground md:inline-flex"
+                      aria-label="Collapse sidebar"
+                      title="Collapse sidebar"
+                    />
                   }
                 />
-                <TooltipPopup side="bottom">{desktopUpdateTooltip}</TooltipPopup>
+                <TooltipPopup side="bottom">Collapse sidebar</TooltipPopup>
               </Tooltip>
-            )}
+              {showDesktopUpdateButton && (
+                <Tooltip>
+                  <TooltipTrigger
+                    render={
+                      <button
+                        type="button"
+                        aria-label={desktopUpdateTooltip}
+                        aria-disabled={desktopUpdateButtonDisabled || undefined}
+                        disabled={desktopUpdateButtonDisabled}
+                        className={`inline-flex size-7 mt-1.5 items-center justify-center rounded-md text-muted-foreground transition-colors ${desktopUpdateButtonInteractivityClasses} ${desktopUpdateButtonClasses}`}
+                        onClick={handleDesktopUpdateButtonClick}
+                      >
+                        <RocketIcon className="size-3.5" />
+                      </button>
+                    }
+                  />
+                  <TooltipPopup side="bottom">{desktopUpdateTooltip}</TooltipPopup>
+                </Tooltip>
+              )}
+            </div>
           </SidebarHeader>
         </>
       ) : (
-        <SidebarHeader className="gap-3 px-3 py-2 sm:gap-2.5 sm:px-4 sm:py-3">
+        <SidebarHeader className="flex-row items-center gap-3 px-3 py-2 sm:gap-2.5 sm:px-4 sm:py-3">
           {wordmark}
+          <Tooltip>
+            <TooltipTrigger
+              render={
+                <SidebarTrigger
+                  className="ml-auto hidden shrink-0 text-muted-foreground md:inline-flex"
+                  aria-label="Collapse sidebar"
+                  title="Collapse sidebar"
+                />
+              }
+            />
+            <TooltipPopup side="bottom">Collapse sidebar</TooltipPopup>
+          </Tooltip>
         </SidebarHeader>
       )}
 
