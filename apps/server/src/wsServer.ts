@@ -709,6 +709,12 @@ export const createServer = Effect.fn(function* (): Effect.fn.Return<
       case ORCHESTRATION_WS_METHODS.getSnapshot:
         return yield* projectionReadModelQuery.getSnapshot();
 
+      case ORCHESTRATION_WS_METHODS.getSnapshotSummary:
+        return yield* projectionReadModelQuery.getSnapshotSummary();
+
+      case ORCHESTRATION_WS_METHODS.getThreadSnapshot:
+        return yield* projectionReadModelQuery.getThreadSnapshot(request.body.threadId);
+
       case ORCHESTRATION_WS_METHODS.dispatchCommand: {
         const { command } = request.body;
         const normalizedCommand = yield* normalizeDispatchCommand({ command });

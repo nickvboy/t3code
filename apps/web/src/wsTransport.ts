@@ -21,6 +21,10 @@ interface SubscribeOptions {
   readonly replayLatest?: boolean;
 }
 
+interface RequestOptions {
+  readonly timeoutMs?: number;
+}
+
 type TransportState = "connecting" | "open" | "reconnecting" | "closed" | "disposed";
 
 const REQUEST_TIMEOUT_MS = 60_000;
@@ -72,7 +76,11 @@ export class WsTransport {
     this.connect();
   }
 
-  async request<T = unknown>(method: string, params?: unknown): Promise<T> {
+  async request<T = unknown>(
+    method: string,
+    params?: unknown,
+    options?: RequestOptions,
+  ): Promise<T> {
     if (typeof method !== "string" || method.length === 0) {
       throw new Error("Request method is required");
     }
@@ -83,10 +91,11 @@ export class WsTransport {
     const encoded = JSON.stringify(message);
 
     return new Promise<T>((resolve, reject) => {
+      const timeoutMs = options?.timeoutMs ?? REQUEST_TIMEOUT_MS;
       const timeout = setTimeout(() => {
         this.pending.delete(id);
         reject(new Error(`Request timed out: ${method}`));
-      }, REQUEST_TIMEOUT_MS);
+      }, timeoutMs);
 
       this.pending.set(id, {
         resolve: resolve as (result: unknown) => void,

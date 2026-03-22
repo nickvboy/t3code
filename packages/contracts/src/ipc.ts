@@ -44,7 +44,10 @@ import type {
   OrchestrationGetTurnDiffResult,
   OrchestrationEvent,
   OrchestrationReadModel,
+  OrchestrationReadModelSummary,
+  OrchestrationThread,
 } from "./orchestration";
+import type { ThreadId } from "./baseSchemas";
 import { EditorId } from "./editor";
 
 export interface ContextMenuItem<T extends string = string> {
@@ -162,6 +165,8 @@ export interface NativeApi {
   };
   orchestration: {
     getSnapshot: () => Promise<OrchestrationReadModel>;
+    getSnapshotSummary: () => Promise<OrchestrationReadModelSummary>;
+    getThreadSnapshot: (input: { threadId: ThreadId }) => Promise<OrchestrationThread | null>;
     dispatchCommand: (command: ClientOrchestrationCommand) => Promise<{ sequence: number }>;
     getTurnDiff: (input: OrchestrationGetTurnDiffInput) => Promise<OrchestrationGetTurnDiffResult>;
     getFullThreadDiff: (

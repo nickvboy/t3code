@@ -15,6 +15,7 @@ import { WsTransport } from "./wsTransport";
 let instance: { api: NativeApi; transport: WsTransport } | null = null;
 const welcomeListeners = new Set<(payload: WsWelcomePayload) => void>();
 const serverConfigUpdatedListeners = new Set<(payload: ServerConfigUpdatedPayload) => void>();
+const ORCHESTRATION_COMMAND_TIMEOUT_MS = 3 * 60_000;
 
 /**
  * Subscribe to the server welcome message. If a welcome was already received
@@ -163,8 +164,15 @@ export function createWsNativeApi(): NativeApi {
     },
     orchestration: {
       getSnapshot: () => transport.request(ORCHESTRATION_WS_METHODS.getSnapshot),
+      getSnapshotSummary: () => transport.request(ORCHESTRATION_WS_METHODS.getSnapshotSummary),
+      getThreadSnapshot: (input) =>
+        transport.request(ORCHESTRATION_WS_METHODS.getThreadSnapshot, input),
       dispatchCommand: (command) =>
-        transport.request(ORCHESTRATION_WS_METHODS.dispatchCommand, { command }),
+        transport.request(
+          ORCHESTRATION_WS_METHODS.dispatchCommand,
+          { command },
+          { timeoutMs: ORCHESTRATION_COMMAND_TIMEOUT_MS },
+        ),
       getTurnDiff: (input) => transport.request(ORCHESTRATION_WS_METHODS.getTurnDiff, input),
       getFullThreadDiff: (input) =>
         transport.request(ORCHESTRATION_WS_METHODS.getFullThreadDiff, input),

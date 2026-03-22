@@ -17,6 +17,8 @@ import {
 
 export const ORCHESTRATION_WS_METHODS = {
   getSnapshot: "orchestration.getSnapshot",
+  getSnapshotSummary: "orchestration.getSnapshotSummary",
+  getThreadSnapshot: "orchestration.getThreadSnapshot",
   dispatchCommand: "orchestration.dispatchCommand",
   getTurnDiff: "orchestration.getTurnDiff",
   getFullThreadDiff: "orchestration.getFullThreadDiff",
@@ -292,6 +294,27 @@ export const OrchestrationThread = Schema.Struct({
 });
 export type OrchestrationThread = typeof OrchestrationThread.Type;
 
+export const OrchestrationThreadSummary = Schema.Struct({
+  id: ThreadId,
+  projectId: ProjectId,
+  title: TrimmedNonEmptyString,
+  model: TrimmedNonEmptyString,
+  runtimeMode: RuntimeMode,
+  interactionMode: ProviderInteractionMode.pipe(
+    Schema.withDecodingDefault(() => DEFAULT_PROVIDER_INTERACTION_MODE),
+  ),
+  branch: Schema.NullOr(TrimmedNonEmptyString),
+  worktreePath: Schema.NullOr(TrimmedNonEmptyString),
+  latestTurn: Schema.NullOr(OrchestrationLatestTurn),
+  createdAt: IsoDateTime,
+  updatedAt: IsoDateTime,
+  deletedAt: Schema.NullOr(IsoDateTime),
+  proposedPlans: Schema.Array(OrchestrationProposedPlan).pipe(Schema.withDecodingDefault(() => [])),
+  activities: Schema.Array(OrchestrationThreadActivity),
+  session: Schema.NullOr(OrchestrationSession),
+});
+export type OrchestrationThreadSummary = typeof OrchestrationThreadSummary.Type;
+
 export const OrchestrationReadModel = Schema.Struct({
   snapshotSequence: NonNegativeInt,
   projects: Schema.Array(OrchestrationProject),
@@ -299,6 +322,14 @@ export const OrchestrationReadModel = Schema.Struct({
   updatedAt: IsoDateTime,
 });
 export type OrchestrationReadModel = typeof OrchestrationReadModel.Type;
+
+export const OrchestrationReadModelSummary = Schema.Struct({
+  snapshotSequence: NonNegativeInt,
+  projects: Schema.Array(OrchestrationProject),
+  threads: Schema.Array(OrchestrationThreadSummary),
+  updatedAt: IsoDateTime,
+});
+export type OrchestrationReadModelSummary = typeof OrchestrationReadModelSummary.Type;
 
 export const ProjectCreateCommand = Schema.Struct({
   type: Schema.Literal("project.create"),
@@ -957,6 +988,19 @@ export type OrchestrationGetSnapshotInput = typeof OrchestrationGetSnapshotInput
 const OrchestrationGetSnapshotResult = OrchestrationReadModel;
 export type OrchestrationGetSnapshotResult = typeof OrchestrationGetSnapshotResult.Type;
 
+export const OrchestrationGetSnapshotSummaryInput = Schema.Struct({});
+export type OrchestrationGetSnapshotSummaryInput = typeof OrchestrationGetSnapshotSummaryInput.Type;
+const OrchestrationGetSnapshotSummaryResult = OrchestrationReadModelSummary;
+export type OrchestrationGetSnapshotSummaryResult =
+  typeof OrchestrationGetSnapshotSummaryResult.Type;
+
+export const OrchestrationGetThreadSnapshotInput = Schema.Struct({
+  threadId: ThreadId,
+});
+export type OrchestrationGetThreadSnapshotInput = typeof OrchestrationGetThreadSnapshotInput.Type;
+const OrchestrationGetThreadSnapshotResult = Schema.NullOr(OrchestrationThread);
+export type OrchestrationGetThreadSnapshotResult = typeof OrchestrationGetThreadSnapshotResult.Type;
+
 export const OrchestrationGetTurnDiffInput = TurnCountRange.mapFields(
   Struct.assign({ threadId: ThreadId }),
   { unsafePreserveChecks: true },
@@ -987,6 +1031,14 @@ export const OrchestrationRpcSchemas = {
   getSnapshot: {
     input: OrchestrationGetSnapshotInput,
     output: OrchestrationGetSnapshotResult,
+  },
+  getSnapshotSummary: {
+    input: OrchestrationGetSnapshotSummaryInput,
+    output: OrchestrationGetSnapshotSummaryResult,
+  },
+  getThreadSnapshot: {
+    input: OrchestrationGetThreadSnapshotInput,
+    output: OrchestrationGetThreadSnapshotResult,
   },
   dispatchCommand: {
     input: ClientOrchestrationCommand,

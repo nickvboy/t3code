@@ -131,7 +131,8 @@ function errorDetails(error: unknown): string {
 }
 
 function EventRouter() {
-  const syncServerReadModel = useStore((store) => store.syncServerReadModel);
+  const syncServerReadModelSummary = useStore((store) => store.syncServerReadModelSummary);
+  const syncThreadDetail = useStore((store) => store.syncThreadDetail);
   const setProjectExpanded = useStore((store) => store.setProjectExpanded);
   const removeOrphanedTerminalStates = useTerminalStateStore(
     (store) => store.removeOrphanedTerminalStates,
@@ -144,6 +145,15 @@ function EventRouter() {
 
   pathnameRef.current = pathname;
 
+  const resolveActiveThreadIdFromPathname = (value: string): ThreadId | null => {
+    const match = /^\/([^/]+)$/.exec(value);
+    const threadSegment = match?.[1];
+    if (!threadSegment || threadSegment === "settings") {
+      return null;
+    }
+    return ThreadId.makeUnsafe(decodeURIComponent(threadSegment));
+  };
+
   useEffect(() => {
     const api = readNativeApi();
     if (!api) return;
@@ -154,10 +164,10 @@ function EventRouter() {
     let needsProviderInvalidation = false;
 
     const flushSnapshotSync = async (): Promise<void> => {
-      const snapshot = await api.orchestration.getSnapshot();
+      const snapshot = await api.orchestration.getSnapshotSummary();
       if (disposed) return;
       latestSequence = Math.max(latestSequence, snapshot.snapshotSequence);
-      syncServerReadModel(snapshot);
+      syncServerReadModelSummary(snapshot);
       clearPromotedDraftThreads(new Set(snapshot.threads.map((t) => t.id)));
       const draftThreadIds = Object.keys(
         useComposerDraftStore.getState().draftThreadsByThreadId,
@@ -167,6 +177,13 @@ function EventRouter() {
         draftThreadIds,
       });
       removeOrphanedTerminalStates(activeThreadIds);
+      const activeThreadId = resolveActiveThreadIdFromPathname(pathnameRef.current);
+      if (activeThreadId) {
+        const thread = await api.orchestration.getThreadSnapshot({ threadId: activeThreadId });
+        if (!disposed) {
+          syncThreadDetail(thread);
+        }
+      }
       if (pending) {
         pending = false;
         await flushSnapshotSync();
@@ -315,7 +332,8 @@ function EventRouter() {
     queryClient,
     removeOrphanedTerminalStates,
     setProjectExpanded,
-    syncServerReadModel,
+    syncServerReadModelSummary,
+    syncThreadDetail,
   ]);
 
   return null;

@@ -17,8 +17,10 @@ import {
   stripDiffSearchParams,
 } from "../diffRouteSearch";
 import { useMediaQuery } from "../hooks/useMediaQuery";
+import { readNativeApi } from "../nativeApi";
 import { useStore } from "../store";
 import { Sheet, SheetPopup } from "../components/ui/sheet";
+import { Spinner } from "../components/ui/spinner";
 import { Sidebar, SidebarInset, SidebarProvider, SidebarRail } from "~/components/ui/sidebar";
 
 const DiffPanel = lazy(() => import("../components/DiffPanel"));
@@ -69,6 +71,19 @@ const LazyDiffPanel = (props: { mode: DiffPanelMode }) => {
         <DiffPanel mode={props.mode} />
       </Suspense>
     </DiffWorkerPoolProvider>
+  );
+};
+
+const ChatThreadLoadingState = (props: { label: string }) => {
+  return (
+    <SidebarInset className="h-dvh min-h-0 overflow-hidden overscroll-y-none bg-background text-foreground">
+      <div className="flex h-full items-center justify-center px-6">
+        <div className="flex items-center gap-3 rounded-full border border-border/60 bg-card/70 px-4 py-2 text-sm text-muted-foreground shadow-sm">
+          <Spinner className="size-4" />
+          <span>{props.label}</span>
+        </div>
+      </div>
+    </SidebarInset>
   );
 };
 
@@ -162,12 +177,16 @@ const DiffPanelInlineSidebar = (props: {
 
 function ChatThreadRouteView() {
   const threadsHydrated = useStore((store) => store.threadsHydrated);
+  const syncThreadDetail = useStore((store) => store.syncThreadDetail);
   const navigate = useNavigate();
   const threadId = Route.useParams({
     select: (params) => ThreadId.makeUnsafe(params.threadId),
   });
   const search = Route.useSearch();
   const threadExists = useStore((store) => store.threads.some((thread) => thread.id === threadId));
+  const threadDetailHydrated = useStore(
+    (store) => store.threads.find((thread) => thread.id === threadId)?.detailHydrated === true,
+  );
   const draftThreadExists = useComposerDraftStore((store) =>
     Object.hasOwn(store.draftThreadsByThreadId, threadId),
   );
@@ -212,8 +231,41 @@ function ChatThreadRouteView() {
     }
   }, [navigate, routeThreadExists, threadsHydrated, threadId]);
 
-  if (!threadsHydrated || !routeThreadExists) {
+  useEffect(() => {
+    if (!threadsHydrated || !threadExists || threadDetailHydrated) {
+      return;
+    }
+
+    const api = readNativeApi();
+    if (!api) {
+      return;
+    }
+
+    let cancelled = false;
+    void api.orchestration
+      .getThreadSnapshot({ threadId })
+      .then((thread) => {
+        if (!cancelled) {
+          syncThreadDetail(thread);
+        }
+      })
+      .catch(() => undefined);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [syncThreadDetail, threadDetailHydrated, threadExists, threadId, threadsHydrated]);
+
+  if (!threadsHydrated) {
+    return <ChatThreadLoadingState label="Loading conversations..." />;
+  }
+
+  if (!routeThreadExists) {
     return null;
+  }
+
+  if (threadExists && !threadDetailHydrated) {
+    return <ChatThreadLoadingState label="Loading conversation..." />;
   }
 
   const shouldRenderDiffContent = diffOpen || hasOpenedDiff;

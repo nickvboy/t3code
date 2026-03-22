@@ -4,7 +4,9 @@ import {
   type ProviderKind,
   ThreadId,
   type OrchestrationReadModel,
+  type OrchestrationReadModelSummary,
   type OrchestrationSessionStatus,
+  type OrchestrationThread,
 } from "@t3tools/contracts";
 import {
   inferProviderForModel,
@@ -318,6 +320,7 @@ export function syncServerReadModel(state: AppState, readModel: OrchestrationRea
           files: checkpoint.files.map((file) => ({ ...file })),
         })),
         activities: thread.activities.map((activity) => ({ ...activity })),
+        detailHydrated: true,
       };
     });
   return {
@@ -326,6 +329,151 @@ export function syncServerReadModel(state: AppState, readModel: OrchestrationRea
     threads,
     threadsHydrated: true,
   };
+}
+
+export function syncServerReadModelSummary(
+  state: AppState,
+  readModel: OrchestrationReadModelSummary,
+): AppState {
+  const projects = mapProjectsFromReadModel(
+    readModel.projects.filter((project) => project.deletedAt === null),
+    state.projects,
+  );
+  const existingThreadById = new Map(state.threads.map((thread) => [thread.id, thread] as const));
+  const threads = readModel.threads
+    .filter((thread) => thread.deletedAt === null)
+    .map((thread) => {
+      const existing = existingThreadById.get(thread.id);
+      return {
+        id: thread.id,
+        codexThreadId: null,
+        projectId: thread.projectId,
+        title: thread.title,
+        model: resolveModelSlugForProvider(
+          inferProviderForThreadModel({
+            model: thread.model,
+            sessionProviderName: thread.session?.providerName ?? null,
+          }),
+          thread.model,
+        ),
+        runtimeMode: thread.runtimeMode,
+        interactionMode: thread.interactionMode,
+        session: thread.session
+          ? {
+              provider: toLegacyProvider(thread.session.providerName),
+              status: toLegacySessionStatus(thread.session.status),
+              orchestrationStatus: thread.session.status,
+              activeTurnId: thread.session.activeTurnId ?? undefined,
+              createdAt: thread.session.updatedAt,
+              updatedAt: thread.session.updatedAt,
+              ...(thread.session.lastError ? { lastError: thread.session.lastError } : {}),
+            }
+          : null,
+        messages: existing?.messages ?? [],
+        proposedPlans: thread.proposedPlans.map((proposedPlan) => ({
+          id: proposedPlan.id,
+          turnId: proposedPlan.turnId,
+          planMarkdown: proposedPlan.planMarkdown,
+          implementedAt: proposedPlan.implementedAt,
+          implementationThreadId: proposedPlan.implementationThreadId,
+          createdAt: proposedPlan.createdAt,
+          updatedAt: proposedPlan.updatedAt,
+        })),
+        error: thread.session?.lastError ?? null,
+        createdAt: thread.createdAt,
+        latestTurn: thread.latestTurn,
+        lastVisitedAt: existing?.lastVisitedAt ?? thread.updatedAt,
+        branch: thread.branch,
+        worktreePath: thread.worktreePath,
+        turnDiffSummaries: existing?.turnDiffSummaries ?? [],
+        activities: thread.activities.map((activity) => ({ ...activity })),
+        detailHydrated: existing?.detailHydrated ?? false,
+      };
+    });
+  return {
+    ...state,
+    projects,
+    threads,
+    threadsHydrated: true,
+  };
+}
+
+export function syncThreadDetail(state: AppState, thread: OrchestrationThread | null): AppState {
+  if (thread === null || thread.deletedAt !== null) {
+    return state;
+  }
+
+  const threads = updateThread(state.threads, thread.id, (existing) => ({
+    ...existing,
+    title: thread.title,
+    model: resolveModelSlugForProvider(
+      inferProviderForThreadModel({
+        model: thread.model,
+        sessionProviderName: thread.session?.providerName ?? null,
+      }),
+      thread.model,
+    ),
+    runtimeMode: thread.runtimeMode,
+    interactionMode: thread.interactionMode,
+    session: thread.session
+      ? {
+          provider: toLegacyProvider(thread.session.providerName),
+          status: toLegacySessionStatus(thread.session.status),
+          orchestrationStatus: thread.session.status,
+          activeTurnId: thread.session.activeTurnId ?? undefined,
+          createdAt: thread.session.updatedAt,
+          updatedAt: thread.session.updatedAt,
+          ...(thread.session.lastError ? { lastError: thread.session.lastError } : {}),
+        }
+      : null,
+    messages: thread.messages.map((message) => {
+      const attachments = message.attachments?.map((attachment) => ({
+        type: "image" as const,
+        id: attachment.id,
+        name: attachment.name,
+        mimeType: attachment.mimeType,
+        sizeBytes: attachment.sizeBytes,
+        previewUrl: toAttachmentPreviewUrl(attachmentPreviewRoutePath(attachment.id)),
+      }));
+      const normalizedMessage: ChatMessage = {
+        id: message.id,
+        role: message.role,
+        text: message.text,
+        createdAt: message.createdAt,
+        streaming: message.streaming,
+        ...(message.streaming ? {} : { completedAt: message.updatedAt }),
+        ...(attachments && attachments.length > 0 ? { attachments } : {}),
+      };
+      return normalizedMessage;
+    }),
+    proposedPlans: thread.proposedPlans.map((proposedPlan) => ({
+      id: proposedPlan.id,
+      turnId: proposedPlan.turnId,
+      planMarkdown: proposedPlan.planMarkdown,
+      implementedAt: proposedPlan.implementedAt,
+      implementationThreadId: proposedPlan.implementationThreadId,
+      createdAt: proposedPlan.createdAt,
+      updatedAt: proposedPlan.updatedAt,
+    })),
+    error: thread.session?.lastError ?? null,
+    createdAt: thread.createdAt,
+    latestTurn: thread.latestTurn,
+    branch: thread.branch,
+    worktreePath: thread.worktreePath,
+    turnDiffSummaries: thread.checkpoints.map((checkpoint) => ({
+      turnId: checkpoint.turnId,
+      completedAt: checkpoint.completedAt,
+      status: checkpoint.status,
+      assistantMessageId: checkpoint.assistantMessageId ?? undefined,
+      checkpointTurnCount: checkpoint.checkpointTurnCount,
+      checkpointRef: checkpoint.checkpointRef,
+      files: checkpoint.files.map((file) => ({ ...file })),
+    })),
+    activities: thread.activities.map((activity) => ({ ...activity })),
+    detailHydrated: true,
+  }));
+
+  return threads === state.threads ? state : { ...state, threads };
 }
 
 export function markThreadVisited(
@@ -429,6 +577,8 @@ export function setThreadBranch(
 
 interface AppStore extends AppState {
   syncServerReadModel: (readModel: OrchestrationReadModel) => void;
+  syncServerReadModelSummary: (readModel: OrchestrationReadModelSummary) => void;
+  syncThreadDetail: (thread: OrchestrationThread | null) => void;
   markThreadVisited: (threadId: ThreadId, visitedAt?: string) => void;
   markThreadUnread: (threadId: ThreadId) => void;
   toggleProject: (projectId: Project["id"]) => void;
@@ -441,6 +591,9 @@ interface AppStore extends AppState {
 export const useStore = create<AppStore>((set) => ({
   ...readPersistedState(),
   syncServerReadModel: (readModel) => set((state) => syncServerReadModel(state, readModel)),
+  syncServerReadModelSummary: (readModel) =>
+    set((state) => syncServerReadModelSummary(state, readModel)),
+  syncThreadDetail: (thread) => set((state) => syncThreadDetail(state, thread)),
   markThreadVisited: (threadId, visitedAt) =>
     set((state) => markThreadVisited(state, threadId, visitedAt)),
   markThreadUnread: (threadId) => set((state) => markThreadUnread(state, threadId)),

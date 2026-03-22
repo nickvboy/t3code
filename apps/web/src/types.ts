@@ -104,6 +104,7 @@ export interface Thread {
   worktreePath: string | null;
   turnDiffSummaries: TurnDiffSummary[];
   activities: OrchestrationThreadActivity[];
+  detailHydrated?: boolean;
 }
 
 export interface ThreadSession {

@@ -6,7 +6,12 @@
  *
  * @module ProjectionSnapshotQuery
  */
-import type { OrchestrationReadModel } from "@t3tools/contracts";
+import type {
+  OrchestrationReadModel,
+  OrchestrationReadModelSummary,
+  OrchestrationThread,
+  ThreadId,
+} from "@t3tools/contracts";
 import { ServiceMap } from "effect";
 import type { Effect } from "effect";
 
@@ -23,6 +28,13 @@ export interface ProjectionSnapshotQueryShape {
    * projector cursor state.
    */
   readonly getSnapshot: () => Effect.Effect<OrchestrationReadModel, ProjectionRepositoryError>;
+  readonly getSnapshotSummary: () => Effect.Effect<
+    OrchestrationReadModelSummary,
+    ProjectionRepositoryError
+  >;
+  readonly getThreadSnapshot: (
+    threadId: ThreadId,
+  ) => Effect.Effect<OrchestrationThread | null, ProjectionRepositoryError>;
 }
 
 /**

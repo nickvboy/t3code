@@ -10,33 +10,13 @@ import { serverConfigQueryOptions } from "../lib/serverReactQuery";
 import { resolveShortcutCommand } from "../keybindings";
 import { selectThreadTerminalState, useTerminalStateStore } from "../terminalStateStore";
 import { useThreadSelectionStore } from "../threadSelectionStore";
-import {
-  Sidebar,
-  SidebarProvider,
-  SidebarRail,
-  SidebarTrigger,
-  useSidebar,
-} from "~/components/ui/sidebar";
+import { Sidebar, SidebarProvider } from "~/components/ui/sidebar";
 import { resolveSidebarNewThreadEnvMode } from "~/components/Sidebar.logic";
 import { useAppSettings } from "~/appSettings";
 
 const EMPTY_KEYBINDINGS: ResolvedKeybindingsConfig = [];
 const THREAD_SIDEBAR_WIDTH_STORAGE_KEY = "chat_thread_sidebar_width";
 const THREAD_SIDEBAR_MIN_WIDTH = 16 * 16;
-
-function CollapsedSidebarDesktopTrigger() {
-  const { isMobile, open } = useSidebar();
-
-  if (isMobile || open) {
-    return null;
-  }
-
-  return (
-    <div className="pointer-events-none fixed top-3 left-3 z-40 hidden md:block">
-      <SidebarTrigger className="pointer-events-auto border border-border bg-card shadow-xs" />
-    </div>
-  );
-}
 
 function ChatRouteGlobalShortcuts() {
   const clearSelection = useThreadSelectionStore((state) => state.clearSelection);
@@ -134,7 +114,6 @@ function ChatRouteLayout() {
   return (
     <SidebarProvider defaultOpen>
       <ChatRouteGlobalShortcuts />
-      <CollapsedSidebarDesktopTrigger />
       <Sidebar
         side="left"
         collapsible="offcanvas"
@@ -145,7 +124,6 @@ function ChatRouteLayout() {
         }}
       >
         <ThreadSidebar />
-        <SidebarRail />
       </Sidebar>
       <Outlet />
     </SidebarProvider>
