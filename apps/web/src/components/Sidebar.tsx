@@ -77,6 +77,7 @@ import {
   SidebarMenuSub,
   SidebarMenuSubButton,
   SidebarMenuSubItem,
+  SidebarRail,
   SidebarSeparator,
   SidebarTrigger,
 } from "./ui/sidebar";
@@ -1704,6 +1705,7 @@ export default function Sidebar() {
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarFooter>
+      <SidebarRail />
     </>
   );
 }
