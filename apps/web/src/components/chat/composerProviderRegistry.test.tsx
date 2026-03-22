@@ -13,7 +13,31 @@ describe("getComposerProviderState", () => {
     expect(state).toEqual({
       provider: "codex",
       promptEffort: "high",
-      modelOptionsForDispatch: undefined,
+      modelOptionsForDispatch: {
+        codex: {
+          reasoningEffort: "high",
+        },
+      },
+    });
+  });
+
+  it("uses the configured Codex default for both UI state and dispatch", () => {
+    const state = getComposerProviderState({
+      provider: "codex",
+      model: "gpt-5.4",
+      prompt: "",
+      modelOptions: undefined,
+      codexDefaultReasoningEffort: "medium",
+    });
+
+    expect(state).toEqual({
+      provider: "codex",
+      promptEffort: "medium",
+      modelOptionsForDispatch: {
+        codex: {
+          reasoningEffort: "medium",
+        },
+      },
     });
   });
 
@@ -143,7 +167,11 @@ describe("getComposerProviderState", () => {
     expect(state).toEqual({
       provider: "codex",
       promptEffort: "high",
-      modelOptionsForDispatch: undefined,
+      modelOptionsForDispatch: {
+        codex: {
+          reasoningEffort: "high",
+        },
+      },
     });
   });
 });

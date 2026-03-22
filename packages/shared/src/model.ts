@@ -227,14 +227,21 @@ export function getEffectiveClaudeCodeEffort(
 
 export function normalizeCodexModelOptions(
   modelOptions: CodexModelOptions | null | undefined,
+  options?: {
+    defaultReasoningEffort?: CodexReasoningEffort | null | undefined;
+    includeDefaultReasoningEffort?: boolean;
+  },
 ): CodexModelOptions | undefined {
-  const defaultReasoningEffort = getDefaultReasoningEffort("codex");
+  const defaultReasoningEffort =
+    options?.defaultReasoningEffort ?? getDefaultReasoningEffort("codex");
   const reasoningEffort =
     resolveReasoningEffortForProvider("codex", modelOptions?.reasoningEffort) ??
     defaultReasoningEffort;
   const fastModeEnabled = modelOptions?.fastMode === true;
   const nextOptions: CodexModelOptions = {
-    ...(reasoningEffort !== defaultReasoningEffort ? { reasoningEffort } : {}),
+    ...(options?.includeDefaultReasoningEffort || reasoningEffort !== defaultReasoningEffort
+      ? { reasoningEffort }
+      : {}),
     ...(fastModeEnabled ? { fastMode: true } : {}),
   };
   return Object.keys(nextOptions).length > 0 ? nextOptions : undefined;

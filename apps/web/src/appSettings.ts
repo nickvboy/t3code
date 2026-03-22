@@ -1,10 +1,17 @@
 import { useCallback } from "react";
 import { Option, Schema } from "effect";
-import { TrimmedNonEmptyString, type ProviderKind } from "@t3tools/contracts";
 import {
+  CODEX_REASONING_EFFORT_OPTIONS,
+  type CodexReasoningEffort,
+  TrimmedNonEmptyString,
+  type ProviderKind,
+} from "@t3tools/contracts";
+import {
+  getDefaultReasoningEffort,
   getDefaultModel,
   getModelOptions,
   normalizeModelSlug,
+  resolveReasoningEffortForProvider,
   resolveSelectableModel,
 } from "@t3tools/shared/model";
 import { useLocalStorage } from "./hooks/useLocalStorage";
@@ -49,6 +56,9 @@ const withDefaults =
 export const AppSettingsSchema = Schema.Struct({
   codexBinaryPath: Schema.String.check(Schema.isMaxLength(4096)).pipe(withDefaults(() => "")),
   codexHomePath: Schema.String.check(Schema.isMaxLength(4096)).pipe(withDefaults(() => "")),
+  codexDefaultReasoningEffort: Schema.Literals(CODEX_REASONING_EFFORT_OPTIONS).pipe(
+    withDefaults(() => getDefaultReasoningEffort("codex")),
+  ),
   defaultThreadEnvMode: EnvMode.pipe(withDefaults(() => "local" as const satisfies EnvMode)),
   confirmThreadDelete: Schema.Boolean.pipe(withDefaults(() => true)),
   enableAssistantStreaming: Schema.Boolean.pipe(withDefaults(() => false)),
@@ -114,6 +124,19 @@ export function normalizeCustomModelSlugs(
   }
 
   return normalizedModels;
+}
+
+export function resolveCodexDefaultReasoningEffort(
+  settings:
+    | Pick<AppSettings, "codexDefaultReasoningEffort">
+    | { codexDefaultReasoningEffort?: string | null | undefined }
+    | null
+    | undefined,
+): CodexReasoningEffort {
+  return (
+    resolveReasoningEffortForProvider("codex", settings?.codexDefaultReasoningEffort) ??
+    getDefaultReasoningEffort("codex")
+  );
 }
 
 function normalizeAppSettings(settings: AppSettings): AppSettings {

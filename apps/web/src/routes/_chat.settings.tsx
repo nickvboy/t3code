@@ -1,8 +1,16 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useCallback, useState } from "react";
-import { type ProviderKind, DEFAULT_GIT_TEXT_GENERATION_MODEL } from "@t3tools/contracts";
-import { getModelOptions, normalizeModelSlug } from "@t3tools/shared/model";
+import {
+  type CodexReasoningEffort,
+  type ProviderKind,
+  DEFAULT_GIT_TEXT_GENERATION_MODEL,
+} from "@t3tools/contracts";
+import {
+  getModelOptions,
+  getReasoningEffortOptions,
+  normalizeModelSlug,
+} from "@t3tools/shared/model";
 import {
   getAppModelOptions,
   getCustomModelsForProvider,
@@ -10,6 +18,7 @@ import {
   MAX_CUSTOM_MODEL_LENGTH,
   MODEL_PROVIDER_SETTINGS,
   patchCustomModels,
+  resolveCodexDefaultReasoningEffort,
   useAppSettings,
 } from "../appSettings";
 import { resolveAndPersistPreferredEditor } from "../editorPreferences";
@@ -54,6 +63,13 @@ const TIMESTAMP_FORMAT_LABELS = {
   "24-hour": "24-hour",
 } as const;
 
+const CODEX_REASONING_LABELS: Record<CodexReasoningEffort, string> = {
+  low: "Low",
+  medium: "Medium",
+  high: "High",
+  xhigh: "Extra High",
+};
+
 function SettingsRouteView() {
   const { theme, setTheme, resolvedTheme } = useTheme();
   const { settings, defaults, updateSettings } = useAppSettings();
@@ -72,6 +88,8 @@ function SettingsRouteView() {
 
   const codexBinaryPath = settings.codexBinaryPath;
   const codexHomePath = settings.codexHomePath;
+  const codexDefaultReasoningEffort = resolveCodexDefaultReasoningEffort(settings);
+  const codexReasoningOptions = getReasoningEffortOptions("codex");
   const keybindingsConfigPath = serverConfigQuery.data?.keybindingsConfigPath ?? null;
   const availableEditors = serverConfigQuery.data?.availableEditors;
 
@@ -318,6 +336,53 @@ function SettingsRouteView() {
                     Optional custom Codex home/config directory.
                   </span>
                 </label>
+
+                <div className="flex items-center justify-between rounded-lg border border-border bg-background px-3 py-2">
+                  <div>
+                    <p className="text-sm font-medium text-foreground">Default reasoning effort</p>
+                    <p className="text-xs text-muted-foreground">
+                      Used for Codex turns unless a thread explicitly overrides reasoning.
+                    </p>
+                  </div>
+                  <Select
+                    value={codexDefaultReasoningEffort}
+                    onValueChange={(value) => {
+                      if (!codexReasoningOptions.some((option) => option === value)) return;
+                      updateSettings({
+                        codexDefaultReasoningEffort: value as CodexReasoningEffort,
+                      });
+                    }}
+                  >
+                    <SelectTrigger className="w-40" aria-label="Default Codex reasoning effort">
+                      <SelectValue>
+                        {CODEX_REASONING_LABELS[codexDefaultReasoningEffort]}
+                      </SelectValue>
+                    </SelectTrigger>
+                    <SelectPopup align="end">
+                      {codexReasoningOptions.map((option) => (
+                        <SelectItem key={option} value={option}>
+                          {CODEX_REASONING_LABELS[option]}
+                        </SelectItem>
+                      ))}
+                    </SelectPopup>
+                  </Select>
+                </div>
+
+                {settings.codexDefaultReasoningEffort !== defaults.codexDefaultReasoningEffort ? (
+                  <div className="flex justify-end">
+                    <Button
+                      size="xs"
+                      variant="outline"
+                      onClick={() =>
+                        updateSettings({
+                          codexDefaultReasoningEffort: defaults.codexDefaultReasoningEffort,
+                        })
+                      }
+                    >
+                      Restore reasoning default
+                    </Button>
+                  </div>
+                ) : null}
 
                 <div className="flex flex-col gap-3 text-xs text-muted-foreground sm:flex-row sm:items-start sm:justify-between">
                   <div className="min-w-0 flex-1">

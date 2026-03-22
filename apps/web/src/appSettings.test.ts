@@ -12,6 +12,7 @@ import {
   MODEL_PROVIDER_SETTINGS,
   normalizeCustomModelSlugs,
   patchCustomModels,
+  resolveCodexDefaultReasoningEffort,
   resolveAppModelSelection,
 } from "./appSettings";
 
@@ -107,6 +108,14 @@ describe("resolveAppModelSelection", () => {
 describe("timestamp format defaults", () => {
   it("defaults timestamp format to locale", () => {
     expect(DEFAULT_TIMESTAMP_FORMAT).toBe("locale");
+  });
+});
+
+describe("resolveCodexDefaultReasoningEffort", () => {
+  it("returns the configured Codex default reasoning effort", () => {
+    expect(resolveCodexDefaultReasoningEffort({ codexDefaultReasoningEffort: "medium" })).toBe(
+      "medium",
+    );
   });
 });
 
@@ -211,6 +220,7 @@ describe("AppSettingsSchema", () => {
     ).toMatchObject({
       codexBinaryPath: "/usr/local/bin/codex",
       codexHomePath: "",
+      codexDefaultReasoningEffort: "high",
       defaultThreadEnvMode: "local",
       confirmThreadDelete: false,
       enableAssistantStreaming: false,

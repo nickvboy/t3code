@@ -123,6 +123,7 @@ import {
   getCustomModelOptionsByProvider,
   getCustomModelsByProvider,
   resolveAppModelSelection,
+  resolveCodexDefaultReasoningEffort,
   useAppSettings,
 } from "../appSettings";
 import { isTerminalFocused } from "../lib/terminalFocus";
@@ -606,6 +607,10 @@ export default function ChatView({ threadId }: ChatViewProps) {
     return resolveAppModelSelection(selectedProvider, customModelsByProvider, draftModel);
   }, [baseThreadModel, composerDraft.model, customModelsByProvider, selectedProvider]);
   const draftModelOptions = composerDraft.modelOptions;
+  const configuredCodexDefaultReasoningEffort = useMemo(
+    () => resolveCodexDefaultReasoningEffort(settings),
+    [settings],
+  );
   const composerProviderState = useMemo(
     () =>
       getComposerProviderState({
@@ -613,8 +618,15 @@ export default function ChatView({ threadId }: ChatViewProps) {
         model: selectedModel,
         prompt,
         modelOptions: draftModelOptions,
+        codexDefaultReasoningEffort: configuredCodexDefaultReasoningEffort,
       }),
-    [draftModelOptions, prompt, selectedModel, selectedProvider],
+    [
+      configuredCodexDefaultReasoningEffort,
+      draftModelOptions,
+      prompt,
+      selectedModel,
+      selectedProvider,
+    ],
   );
   const selectedPromptEffort = composerProviderState.promptEffort;
   const selectedModelOptionsForDispatch = composerProviderState.modelOptionsForDispatch;

@@ -1,5 +1,6 @@
 import {
   type ModelSlug,
+  type CodexReasoningEffort,
   type ProviderKind,
   type ProviderModelOptions,
   type ThreadId,
@@ -22,6 +23,7 @@ export type ComposerProviderStateInput = {
   model: ModelSlug;
   prompt: string;
   modelOptions: ProviderModelOptions | null | undefined;
+  codexDefaultReasoningEffort?: CodexReasoningEffort;
 };
 
 export type ComposerProviderState = {
@@ -49,11 +51,16 @@ type ProviderRegistryEntry = {
 
 const composerProviderRegistry: Record<ProviderKind, ProviderRegistryEntry> = {
   codex: {
-    getState: ({ modelOptions }) => {
+    getState: ({ modelOptions, codexDefaultReasoningEffort }) => {
+      const defaultReasoningEffort =
+        codexDefaultReasoningEffort ?? getDefaultReasoningEffort("codex");
       const promptEffort =
         resolveReasoningEffortForProvider("codex", modelOptions?.codex?.reasoningEffort) ??
-        getDefaultReasoningEffort("codex");
-      const normalizedCodexOptions = normalizeCodexModelOptions(modelOptions?.codex);
+        defaultReasoningEffort;
+      const normalizedCodexOptions = normalizeCodexModelOptions(modelOptions?.codex, {
+        defaultReasoningEffort,
+        includeDefaultReasoningEffort: true,
+      });
 
       return {
         provider: "codex",

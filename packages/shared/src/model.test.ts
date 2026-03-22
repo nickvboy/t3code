@@ -260,10 +260,30 @@ describe("normalizeCodexModelOptions", () => {
     ).toBeUndefined();
   });
 
+  it("uses an overridden Codex default when normalizing persisted options", () => {
+    expect(
+      normalizeCodexModelOptions(
+        { reasoningEffort: "medium", fastMode: false },
+        { defaultReasoningEffort: "medium" },
+      ),
+    ).toBeUndefined();
+  });
+
   it("preserves non-default codex options", () => {
     expect(normalizeCodexModelOptions({ reasoningEffort: "xhigh", fastMode: true })).toEqual({
       reasoningEffort: "xhigh",
       fastMode: true,
+    });
+  });
+
+  it("can preserve the effective default effort when dispatch requires it", () => {
+    expect(
+      normalizeCodexModelOptions(
+        { reasoningEffort: "high", fastMode: false },
+        { includeDefaultReasoningEffort: true },
+      ),
+    ).toEqual({
+      reasoningEffort: "high",
     });
   });
 });

@@ -5,13 +5,13 @@ import type {
   ThreadId,
 } from "@t3tools/contracts";
 import {
-  getDefaultReasoningEffort,
   getReasoningEffortOptions,
   normalizeCodexModelOptions,
   resolveReasoningEffortForProvider,
 } from "@t3tools/shared/model";
-import { memo, useState } from "react";
 import { ChevronDownIcon } from "lucide-react";
+import { memo, useState } from "react";
+import { resolveCodexDefaultReasoningEffort, useAppSettings } from "../../appSettings";
 import { useComposerDraftStore, useComposerThreadDraft } from "../../composerDraftStore";
 import { Button } from "../ui/button";
 import {
@@ -33,11 +33,13 @@ const CODEX_REASONING_LABELS: Record<CodexReasoningEffort, string> = {
   xhigh: "Extra High",
 };
 
-function getSelectedCodexTraits(modelOptions: CodexModelOptions | null | undefined): {
+function getSelectedCodexTraits(
+  modelOptions: CodexModelOptions | null | undefined,
+  defaultReasoningEffort: CodexReasoningEffort,
+): {
   effort: CodexReasoningEffort;
   fastModeEnabled: boolean;
 } {
-  const defaultReasoningEffort = getDefaultReasoningEffort(PROVIDER);
   return {
     effort:
       resolveReasoningEffortForProvider(PROVIDER, modelOptions?.reasoningEffort) ??
@@ -50,9 +52,10 @@ function CodexTraitsMenuContentImpl(props: { threadId: ThreadId }) {
   const draft = useComposerThreadDraft(props.threadId);
   const modelOptions = draft.modelOptions?.[PROVIDER];
   const setProviderModelOptions = useComposerDraftStore((store) => store.setProviderModelOptions);
+  const { settings } = useAppSettings();
   const options = getReasoningEffortOptions(PROVIDER);
-  const defaultReasoningEffort = getDefaultReasoningEffort(PROVIDER);
-  const { effort, fastModeEnabled } = getSelectedCodexTraits(modelOptions);
+  const defaultReasoningEffort = resolveCodexDefaultReasoningEffort(settings);
+  const { effort, fastModeEnabled } = getSelectedCodexTraits(modelOptions, defaultReasoningEffort);
 
   return (
     <>
@@ -67,10 +70,13 @@ function CodexTraitsMenuContentImpl(props: { threadId: ThreadId }) {
             setProviderModelOptions(
               props.threadId,
               PROVIDER,
-              normalizeCodexModelOptions({
-                ...modelOptions,
-                reasoningEffort: nextEffort,
-              }),
+              normalizeCodexModelOptions(
+                {
+                  ...modelOptions,
+                  reasoningEffort: nextEffort,
+                },
+                { defaultReasoningEffort },
+              ),
               { persistSticky: true },
             );
           }}
@@ -92,10 +98,13 @@ function CodexTraitsMenuContentImpl(props: { threadId: ThreadId }) {
             setProviderModelOptions(
               props.threadId,
               PROVIDER,
-              normalizeCodexModelOptions({
-                ...modelOptions,
-                fastMode: value === "on",
-              }),
+              normalizeCodexModelOptions(
+                {
+                  ...modelOptions,
+                  fastMode: value === "on",
+                },
+                { defaultReasoningEffort },
+              ),
               { persistSticky: true },
             );
           }}
@@ -112,8 +121,10 @@ export const CodexTraitsMenuContent = memo(CodexTraitsMenuContentImpl);
 
 export const CodexTraitsPicker = memo(function CodexTraitsPicker(props: { threadId: ThreadId }) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const { settings } = useAppSettings();
   const modelOptions = useComposerThreadDraft(props.threadId).modelOptions?.codex;
-  const { effort, fastModeEnabled } = getSelectedCodexTraits(modelOptions);
+  const defaultReasoningEffort = resolveCodexDefaultReasoningEffort(settings);
+  const { effort, fastModeEnabled } = getSelectedCodexTraits(modelOptions, defaultReasoningEffort);
   const triggerLabel = [CODEX_REASONING_LABELS[effort], ...(fastModeEnabled ? ["Fast"] : [])]
     .filter(Boolean)
     .join(" · ");
